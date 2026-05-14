@@ -1,34 +1,38 @@
-function StartScreen({ onStart, onReset, hasProgress }) {
+const mortgageNotes = [
+  "L = P x r / (1 - (1 + r)^-n)",
+  "€350.000 - €75.000 = €275.000",
+  "r = 4,2% / 12",
+  "n = 30 x 12 = 360",
+  "Aflossing + rente = maandlast",
+  "LTV = hypotheek / woningwaarde",
+  "€275.000 x 0,00342",
+  "annuiteit = constant",
+  "lineair: schuld daalt elke maand",
+  "toetsrente + inkomen + risico",
+  "buffer = spaargeld - kosten koper",
+  "restschuld na t maanden",
+];
+
+function StartScreen({ onStart }) {
   return (
     <main className="start-screen">
-      <section className="start-panel">
-        <p className="eyebrow">Interactieve adviesmissie</p>
-        <h1>De Hypotheekcheck</h1>
-        <p className="story">
-          De ouders van een goede vriend van jullie zijn van plan om een huis te kopen. Ze huren nu nog en hebben
-          geen ervaring met kopen. Daarom hebben ze een hypotheekadviseur aangenomen om te helpen. Deze adviseur
-          bleek helaas een oplichter en heeft documenten slecht ingevuld en slecht advies gegeven. Nu is er weinig
-          tijd om dit recht te zetten. Omdat jullie de laatste tijd veel hebben geleerd over hypotheken, vraagt de
-          klas om hulp. Wees zorgvuldig, maar ook snel: dan geven jullie het beste advies.
-        </p>
-
-        <div className="mission-stats" aria-label="Missiegegevens">
-          <span>5 onderzoeken</span>
-          <span>27 controles</span>
-          <span>1 centrale casus</span>
-          <span>adviesmemo</span>
+      <div className="mortgage-math-layer" aria-hidden="true">
+        {mortgageNotes.map((note, index) => (
+          <span className={`mortgage-note mortgage-note-${index + 1}`} key={note}>
+            {note}
+          </span>
+        ))}
+      </div>
+      <section className="start-panel" aria-label="Start Hypotheekcheck">
+        <div className="start-title-block">
+          <p className="eyebrow">Escape room</p>
+          <h1>Hypotheekcheck</h1>
+          <p>Een vakoverstijgende escape room voor Bedrijfseconomie, Wiskunde en Informatica</p>
         </div>
-
-        <div className="actions">
-          <button className="primary-button" type="button" onClick={onStart}>
-            {hasProgress ? "Ga verder" : "Start de missie"}
-          </button>
-          {hasProgress && (
-            <button className="ghost-button" type="button" onClick={onReset}>
-              Reset voortgang
-            </button>
-          )}
-        </div>
+        <button className="primary-button start-button" type="button" onClick={onStart}>
+          <span aria-hidden="true">🔒</span>
+          Start de escape room
+        </button>
       </section>
     </main>
   );

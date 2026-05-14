@@ -1,4 +1,4 @@
-const STORAGE_KEY = "hypotheekcheck-progress-v4";
+const STORAGE_KEY = "hypotheekcheck-progress-v6";
 
 export function loadProgress() {
   try {

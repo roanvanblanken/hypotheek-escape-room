@@ -5,9 +5,10 @@ function EvidencePuzzle({
   draftAnswer,
   status,
   feedback,
-  evidence,
-  evidenceUnlocked,
+  canUseFiftyFifty,
+  fiftyFiftyPuzzleId,
   onDraftAnswer,
+  onUseFiftyFifty,
 }) {
   const [answer, setAnswer] = useState(() => (typeof draftAnswer === "string" || typeof draftAnswer === "number" ? String(draftAnswer) : ""));
   const [selectedAnswers, setSelectedAnswers] = useState(() => (Array.isArray(draftAnswer) ? draftAnswer : []));
@@ -16,12 +17,32 @@ function EvidencePuzzle({
   );
   const [open, setOpen] = useState(false);
   const [saved, setSaved] = useState(draftAnswer !== undefined);
+  const [hiddenOptions, setHiddenOptions] = useState(() =>
+    fiftyFiftyPuzzleId === puzzle.id ? getFiftyFiftyOptionsToHide() : [],
+  );
   const solved = status === "correct";
-  const labelOffset = puzzle.id.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0);
-  const labelPool = ["K", "M", "R", "T", "V", "Z", "L", "P", "N", "S", "W", "G"];
+  const supportsFiftyFifty = puzzle.type === "multipleChoice" || puzzle.type === "multipleSelect";
+  const fiftyFiftyUsedHere = hiddenOptions.length > 0 || fiftyFiftyPuzzleId === puzzle.id;
+  const fiftyFiftyUsedElsewhere = Boolean(fiftyFiftyPuzzleId && fiftyFiftyPuzzleId !== puzzle.id);
+  const visibleOptions = puzzle.options
+    ? Object.entries(puzzle.options).filter(([key]) => !hiddenOptions.includes(key))
+    : [];
 
-  function displayLetter(optionKey, index) {
-    return puzzle.optionLetters?.[optionKey] || labelPool[(labelOffset + index * 3) % labelPool.length];
+  function getFiftyFiftyOptionsToHide() {
+    const correctAnswers = (Array.isArray(puzzle.answer) ? puzzle.answer : [puzzle.answer]).map((item) =>
+      String(item).toUpperCase(),
+    );
+    const wrongOptions = Object.keys(puzzle.options || {}).filter((key) => !correctAnswers.includes(key.toUpperCase()));
+
+    return wrongOptions.slice(0, 2);
+  }
+
+  function hideFiftyFiftyOptions(optionsToHide) {
+    setHiddenOptions(optionsToHide);
+    setSelectedAnswers((current) => current.filter((item) => !optionsToHide.includes(item)));
+    if (optionsToHide.includes(answer)) {
+      setAnswer("");
+    }
   }
 
   function currentAnswer() {
@@ -49,6 +70,15 @@ function EvidencePuzzle({
     );
   }
 
+  function useFiftyFifty() {
+    if (!supportsFiftyFifty || !canUseFiftyFifty || fiftyFiftyUsedHere || fiftyFiftyUsedElsewhere || solved) {
+      return;
+    }
+
+    hideFiftyFiftyOptions(getFiftyFiftyOptionsToHide());
+    onUseFiftyFifty?.(puzzle.id);
+  }
+
   const form = (
     <form onSubmit={handleSave}>
       {puzzle.type === "numeric" && (
@@ -66,8 +96,8 @@ function EvidencePuzzle({
 
       {puzzle.type === "multipleChoice" && (
         <fieldset disabled={solved}>
-          <legend>Selecteer dossierregel</legend>
-          {Object.entries(puzzle.options).map(([key, value], index) => (
+          <legend>Selecteer één antwoord</legend>
+          {visibleOptions.map(([key, value]) => (
             <label className="choice" key={key}>
               <input
                 type="radio"
@@ -76,7 +106,7 @@ function EvidencePuzzle({
                 checked={answer === key}
                 onChange={(event) => setAnswer(event.target.value)}
               />
-              <span>{displayLetter(key, index)}</span>
+              <span>{key}</span>
               {value}
             </label>
           ))}
@@ -85,8 +115,8 @@ function EvidencePuzzle({
 
       {puzzle.type === "multipleSelect" && (
         <fieldset disabled={solved}>
-          <legend>Selecteer alle passende dossierregels</legend>
-          {Object.entries(puzzle.options).map(([key, value], index) => (
+          <legend>Selecteer alle juiste antwoorden</legend>
+          {visibleOptions.map(([key, value]) => (
             <label className="choice" key={key}>
               <input
                 type="checkbox"
@@ -94,7 +124,7 @@ function EvidencePuzzle({
                 checked={selectedAnswers.includes(key)}
                 onChange={() => toggleSelected(key)}
               />
-              <span>{displayLetter(key, index)}</span>
+              <span>{key}</span>
               {value}
             </label>
           ))}
@@ -133,8 +163,18 @@ function EvidencePuzzle({
       )}
 
       <div className="puzzle-actions">
+        {supportsFiftyFifty && (
+          <button
+            className="fifty-fifty-button"
+            type="button"
+            onClick={useFiftyFifty}
+            disabled={solved || fiftyFiftyUsedHere || fiftyFiftyUsedElsewhere || !canUseFiftyFifty}
+          >
+            {fiftyFiftyUsedHere || fiftyFiftyUsedElsewhere ? "50/50 gebruikt" : canUseFiftyFifty ? "50/50" : "50/50 na 3 min"}
+          </button>
+        )}
         <button className="primary-button compact" type="submit" disabled={solved}>
-          {solved ? "Bewijsstuk vrij" : "Leg vast in dossier"}
+          {solved ? "Goedgekeurd" : "Antwoord opslaan"}
         </button>
       </div>
     </form>
@@ -146,14 +186,9 @@ function EvidencePuzzle({
         <button className="puzzle-card-trigger" type="button" onClick={() => setOpen(true)}>
           <span className="terminal-line">{puzzle.type}</span>
           <strong>{puzzle.title}</strong>
-          <small>{solved ? "bewijsstuk vrij" : saved ? "keuze vastgelegd" : "klik om dossierkaart te openen"}</small>
+          {puzzle.codeLetter && <span className="puzzle-card-letter">Letter {puzzle.codeLetter}</span>}
+          <small>{solved ? "goedgekeurd" : saved ? "antwoord opgeslagen" : "klik om vraag te openen"}</small>
         </button>
-
-        <div className={`evidence-slot ${evidenceUnlocked ? "unlocked" : ""}`}>
-          <span className="panel-label">Gekoppeld bewijs</span>
-          <strong>{evidenceUnlocked ? evidence.title : "nog niet vrijgegeven"}</strong>
-          <p>{evidenceUnlocked ? evidence.clue : "Open de dossierkaart om dit bewijsstuk vrij te spelen."}</p>
-        </div>
       </article>
 
       {open && (
@@ -169,6 +204,7 @@ function EvidencePuzzle({
               <div>
                 <span className="panel-label">{puzzle.type}</span>
                 <h2 id={`${puzzle.id}-title`}>{puzzle.title}</h2>
+                {puzzle.codeLetter && <p className="question-letter">Anagramletter: {puzzle.codeLetter}</p>}
               </div>
               <button className="icon-button compact" type="button" onClick={() => setOpen(false)}>
                 Sluit
@@ -176,7 +212,7 @@ function EvidencePuzzle({
             </header>
 
             <div className="puzzle-modal-body">
-              <p className="narrative">{puzzle.narrative}</p>
+              {puzzle.narrative && <p className="narrative">{puzzle.narrative}</p>}
               {puzzle.code && <pre className="code-snippet">{puzzle.code}</pre>}
               <p className="task-line">{puzzle.task}</p>
 

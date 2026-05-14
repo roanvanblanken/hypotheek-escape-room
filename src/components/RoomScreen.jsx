@@ -1,5 +1,4 @@
 import { useState } from "react";
-import EvidenceModal from "./EvidenceModal";
 import EvidencePuzzle from "./EvidencePuzzle";
 
 function RoomScreen({
@@ -10,14 +9,18 @@ function RoomScreen({
   answers,
   feedback,
   roomFeedback,
-  unlockedEvidence,
   roomSolved,
+  canUseFiftyFifty,
+  fiftyFiftyPuzzleId,
   onDraftAnswer,
   onSubmitRoomCheck,
+  onUseFiftyFifty,
 }) {
-  const [activeEvidence, setActiveEvidence] = useState(null);
   const [roomCode, setRoomCode] = useState("");
-  const unlockedRoomEvidence = room.evidenceItems.filter((item) => unlockedEvidence.includes(item.id));
+  const [advice, setAdvice] = useState("");
+  const isAdviceRoom = room.type === "advice";
+  const hasEscapeCode = Boolean(room.escapeCode);
+  const hasSupportPanels = room.sidePanels?.length > 0;
 
   return (
     <section className="room-screen">
@@ -30,104 +33,113 @@ function RoomScreen({
         <p className="atmosphere">{room.atmosphere}</p>
       </header>
 
-      <div className="room-workbench">
-        <section className="room-visual" aria-label="Kamerbeeld">
-          <div className="vault-window">
-            <span>{room.shortTitle}</span>
-          </div>
-          <div className="side-panel-stack">
-            {room.sidePanels.map((panel) => (
-              <article className={`object-panel ${panel.kind}`} key={panel.title}>
-                <span className="panel-label">{panel.kind}</span>
-                <h3>{panel.title}</h3>
-                {panel.body ? (
-                  <p>{panel.body}</p>
-                ) : (
-                  <table>
-                    <tbody>
-                      {panel.rows.map(([label, value]) => (
-                        <tr key={label}>
-                          <th>{label}</th>
-                          <td>{value}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </article>
-            ))}
-          </div>
-        </section>
+      <div className={`room-workbench ${isAdviceRoom ? "advice-workbench" : ""} ${hasSupportPanels ? "" : "focus-workbench"}`}>
+        {hasSupportPanels && (
+          <section className="room-visual" aria-label="Kamerinformatie">
+            <div className="vault-window">
+              <span>{room.shortTitle}</span>
+            </div>
+            <div className="side-panel-stack">
+              {room.sidePanels.map((panel) => (
+                <article className={`object-panel ${panel.kind}`} key={panel.title}>
+                  <span className="panel-label">{panel.kind}</span>
+                  <h3>{panel.title}</h3>
+                  {panel.body ? (
+                    <p>{panel.body}</p>
+                  ) : (
+                    <table>
+                      <tbody>
+                        {panel.rows.map(([label, value]) => (
+                          <tr key={label}>
+                            <th>{label}</th>
+                            <td>{value}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
 
-        <section className="terminal-stack" aria-label="Puzzelhandelingen">
-          {room.puzzles.map((puzzle) => {
-            const evidence = room.evidenceItems.find((item) => item.id === puzzle.unlocksEvidenceId);
-
-            return (
-              <EvidencePuzzle
-                key={puzzle.id}
-                puzzle={puzzle}
-                draftAnswer={draftAnswers[puzzle.id]}
-                status={answers[puzzle.id]}
-                feedback={feedback[puzzle.id]}
-                evidence={evidence}
-                evidenceUnlocked={unlockedEvidence.includes(puzzle.unlocksEvidenceId)}
-                onDraftAnswer={onDraftAnswer}
+        {isAdviceRoom ? (
+          <section className="advice-panel" aria-label="Advies aan de ouders">
+            <span className="panel-label">Advies</span>
+            <h3>Schrijf jullie eindadvies</h3>
+            <p>
+              Benoem duidelijk of jullie lineair of annuïtair adviseren. Gebruik minimaal drie voordelen of
+              aandachtspunten, bijvoorbeeld totale kosten, maandlast, zekerheid, aflossing of betaalbaarheid.
+            </p>
+            <label>
+              Advies aan de ouders
+              <textarea
+                value={advice}
+                onChange={(event) => setAdvice(event.target.value)}
+                placeholder="Schrijf hier jullie advies. Vraag daarna de docent om controle."
+                disabled={roomSolved}
               />
-            );
-          })}
-        </section>
+            </label>
+          </section>
+        ) : (
+          <section className="question-panel" aria-label="Vragen">
+            <div className="question-panel-header">
+              <span className="panel-label">Vragen</span>
+              <strong>{room.puzzles.length} opdrachten</strong>
+            </div>
+            <div className="terminal-stack">
+              {room.puzzles.map((puzzle) => (
+                <EvidencePuzzle
+                  key={puzzle.id}
+                  puzzle={puzzle}
+                  draftAnswer={draftAnswers[puzzle.id]}
+                  status={answers[puzzle.id]}
+                  feedback={feedback[puzzle.id]}
+                  canUseFiftyFifty={canUseFiftyFifty}
+                  fiftyFiftyPuzzleId={fiftyFiftyPuzzleId}
+                  onDraftAnswer={onDraftAnswer}
+                  onUseFiftyFifty={onUseFiftyFifty}
+                />
+              ))}
+            </div>
+          </section>
+        )}
       </div>
 
       <footer className="room-footer">
         <section className={`room-codepad ${roomSolved ? "solved" : ""}`}>
           <div>
-            <span className="panel-label">Codeslot</span>
-            <h3>{roomSolved ? "Onderzoek geopend" : "Vorm het codewoord"}</h3>
-            <p>
-              Lees de letters van jullie ingevulde dossierkaarten en hussel ze tot een passend codewoord.
-              Bewijsstukken: {unlockedRoomEvidence.length}/{room.evidenceItems.length}.
-            </p>
+            <span className="panel-label">{isAdviceRoom ? "Docentcontrole" : hasEscapeCode ? "Codewoord" : "Onderzoek"}</span>
+            <h3>{roomSolved ? "Onderzoek afgerond" : isAdviceRoom ? "Voer de docentcode in" : hasEscapeCode ? "Los het anagram op" : "Controleer antwoorden"}</h3>
+            <p>{isAdviceRoom
+              ? "Laat jullie advies controleren door de docent. Bij goedkeuring krijgen jullie de code."
+              : hasEscapeCode
+                ? "Sla de zes antwoorden op, vorm met de letters het codewoord en rond daarna het onderzoek af."
+                : "Sla per vraag je antwoord op en rond daarna het onderzoek af."}</p>
             {roomFeedback && <p className={`feedback ${roomSolved ? "correct" : "incorrect"}`}>{roomFeedback}</p>}
           </div>
-          <form className="room-code-form" onSubmit={(event) => {
+          <form className={`room-code-form ${isAdviceRoom || hasEscapeCode ? "with-code" : "single-action"}`} onSubmit={(event) => {
             event.preventDefault();
-            onSubmitRoomCheck(room.id, roomCode);
+            onSubmitRoomCheck(room.id, roomCode, advice);
           }}>
-            <label>
-              Codewoord
-              <input
-                value={roomCode}
-                onChange={(event) => setRoomCode(event.target.value)}
-                placeholder="woord"
-                disabled={roomSolved}
-              />
-            </label>
+            {(isAdviceRoom || hasEscapeCode) && (
+              <label>
+                {isAdviceRoom ? "Docentcode" : "Codewoord"}
+                <input
+                  value={roomCode}
+                  onChange={(event) => setRoomCode(event.target.value)}
+                  placeholder={isAdviceRoom ? "code" : "anagram"}
+                  disabled={roomSolved}
+                />
+              </label>
+            )}
             <button className="primary-button compact" type="submit" disabled={roomSolved}>
-              Open
+              {isAdviceRoom ? "Win" : "Rond af"}
             </button>
           </form>
         </section>
-        <div className="mini-evidence-rail" aria-label="Bewijsstukken in deze kamer">
-          {room.evidenceItems.map((item) => {
-            const unlocked = unlockedEvidence.includes(item.id);
-
-            return (
-              <button
-                className={unlocked ? "unlocked" : ""}
-                key={item.id}
-                type="button"
-                disabled={!unlocked}
-                onClick={() => setActiveEvidence({ ...item, roomTitle: room.shortTitle })}
-              >
-                <span>{unlocked ? item.type : "nog dicht"}</span>
-                <strong>{unlocked ? item.inventoryLabel : "bewijs"}</strong>
-              </button>
-            );
-          })}
-        </div>
       </footer>
-      <EvidenceModal item={activeEvidence} onClose={() => setActiveEvidence(null)} />
     </section>
   );
 }

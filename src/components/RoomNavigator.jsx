@@ -23,7 +23,7 @@ function RoomNavigator({ rooms, currentRoomIndex, completedRooms, unlockedRooms,
               >
                 <span>{index + 1}</span>
                 <strong>{room.shortTitle}</strong>
-                <small>{unlocked ? (completed ? "afgerond" : "open") : "nog dicht"}</small>
+                <small>{unlocked ? (completed ? "Afgerond" : "Beschikbaar") : "Vergrendeld"}</small>
               </button>
             </li>
           );

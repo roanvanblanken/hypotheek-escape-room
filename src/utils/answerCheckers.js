@@ -50,7 +50,7 @@ export function checkAnswer(question, rawAnswer) {
     return {
       correct,
       message: correct
-        ? cleanFeedback(question.successReveal || "Dossiercontrole geaccepteerd. Er is een bewijsstuk vrijgegeven.")
+        ? cleanFeedback(question.successReveal || "Antwoord goedgekeurd.")
         : cleanFeedback(question.wrongFeedback || `Dit opent nog niets. Controleer je analyse en probeer opnieuw.`),
     };
   }
@@ -62,8 +62,8 @@ export function checkAnswer(question, rawAnswer) {
     return {
       correct,
       message: correct
-        ? "Dossierregel verwerkt. Er is een bewijsstuk vrijgegeven."
-        : "Deze keuze levert nog geen nieuw bewijs op. Controleer het dossier en probeer opnieuw.",
+        ? cleanFeedback(question.successReveal || "Antwoord goedgekeurd.")
+        : cleanFeedback(question.wrongFeedback || "Deze keuze klopt nog niet. Controleer de vraag en probeer opnieuw."),
     };
   }
 
@@ -75,8 +75,8 @@ export function checkAnswer(question, rawAnswer) {
     return {
       correct,
       message: correct
-        ? "Dossierregels verwerkt. Er is een bewijsstuk vrijgegeven."
-        : "Deze combinatie levert nog geen nieuw bewijs op. Controleer het dossier en probeer opnieuw.",
+        ? cleanFeedback(question.successReveal || "Antwoord goedgekeurd.")
+        : cleanFeedback(question.wrongFeedback || "Deze combinatie klopt nog niet. Controleer de vraag en probeer opnieuw."),
     };
   }
 
@@ -88,7 +88,7 @@ export function checkAnswer(question, rawAnswer) {
     return {
       correct,
       message: correct
-        ? cleanFeedback(question.successReveal || "Dossiercontrole geaccepteerd. Er is een bewijsstuk vrijgegeven.")
+        ? cleanFeedback(question.successReveal || "Antwoord goedgekeurd.")
         : cleanFeedback(question.wrongFeedback || "De volgorde opent nog niets."),
     };
   }
@@ -100,8 +100,8 @@ export function checkAnswer(question, rawAnswer) {
     return {
       correct,
       message: correct
-        ? "Vertaaltabel verwerkt. Er is een bewijsstuk vrijgegeven."
-        : "Deze koppeling levert nog geen nieuw bewijs op. Controleer het dossier en probeer opnieuw.",
+        ? cleanFeedback(question.successReveal || "Antwoord goedgekeurd.")
+        : cleanFeedback(question.wrongFeedback || "Deze koppeling klopt nog niet. Controleer de vraag en probeer opnieuw."),
     };
   }
 

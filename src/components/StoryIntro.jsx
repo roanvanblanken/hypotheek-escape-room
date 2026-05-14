@@ -15,28 +15,39 @@ function StoryIntro({ onComplete, onBack }) {
     setSceneIndex((current) => current + 1);
   }
 
+  function previousScene() {
+    if (sceneIndex === 0) {
+      onBack();
+      return;
+    }
+
+    setSceneIndex((current) => current - 1);
+  }
+
   return (
     <main className="story-intro">
       <section className="story-frame">
-        <div className={`story-visual scene-${sceneIndex + 1}`} role="img" aria-label={scene.imageAlt}>
-          <span>{scene.visualLabel}</span>
+        <div className="story-visual">
+          <img src={scene.image} alt={scene.imageAlt} />
         </div>
-        <div className="story-subtitles">
-          <p>{scene.subtitle}</p>
-          {scene.optionalCaption && <span>{scene.optionalCaption}</span>}
-        </div>
-        <div className="story-controls">
-          <button className="ghost-button" type="button" onClick={onBack}>
-            Terug
-          </button>
-          <div className="scene-dots" aria-label="Story voortgang">
-            {storyScenes.map((item, index) => (
-              <span className={index === sceneIndex ? "active" : ""} key={item.visualLabel} />
-            ))}
+        <div className="story-copy-panel">
+          <div className="story-subtitles">
+            <span>{scene.visualLabel}</span>
+            <p>{scene.subtitle}</p>
           </div>
-          <button className="primary-button" type="button" onClick={nextScene}>
-            {isLast ? "Open dossier" : "Volgende stap"}
-          </button>
+          <div className="story-controls">
+            <button className="ghost-button" type="button" onClick={previousScene}>
+              {sceneIndex === 0 ? "Terug naar startscherm" : "Terug"}
+            </button>
+            <div className="scene-dots" aria-label="Story voortgang">
+              {storyScenes.map((item, index) => (
+                <span className={index === sceneIndex ? "active" : ""} key={item.visualLabel} />
+              ))}
+            </div>
+            <button className="primary-button" type="button" onClick={nextScene}>
+              {isLast ? "Open dossier" : "Volgende stap"}
+            </button>
+          </div>
         </div>
       </section>
     </main>

@@ -1,5 +1,4 @@
 import HintDesk from "./HintDesk";
-import Inventory from "./Inventory";
 import RoomNavigator from "./RoomNavigator";
 import ScorePanel from "./ScorePanel";
 import Timer from "./Timer";
@@ -13,7 +12,6 @@ function GameLayout({
   hintsUsed,
   completedRooms,
   unlockedRooms,
-  unlockedEvidence,
   visibleHints,
   onSelectRoom,
   onShowOverview,
@@ -65,7 +63,6 @@ function GameLayout({
             onShowHint={onShowHint}
             secondsRemaining={secondsRemaining}
           />
-          <Inventory rooms={rooms} unlockedEvidence={unlockedEvidence} />
         </aside>
       </section>
     </main>
