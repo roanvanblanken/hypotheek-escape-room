@@ -2,19 +2,21 @@ function StartScreen({ onStart, onReset, hasProgress }) {
   return (
     <main className="start-screen">
       <section className="start-panel">
-        <p className="eyebrow">Digitale escape room</p>
-        <h1>De Hypotheekkluis</h1>
+        <p className="eyebrow">Interactieve adviesmissie</p>
+        <h1>De Hypotheekcheck</h1>
         <p className="story">
-          In de kelder van de bank is een hypotheekdossier vergrendeld. Alleen
-          teams die rente, aflossing, inkomen en woningwaarde kunnen doorrekenen
-          krijgen de eindcode vrij.
+          De ouders van een goede vriend van jullie zijn van plan om een huis te kopen. Ze huren nu nog en hebben
+          geen ervaring met kopen. Daarom hebben ze een hypotheekadviseur aangenomen om te helpen. Deze adviseur
+          bleek helaas een oplichter en heeft documenten slecht ingevuld en slecht advies gegeven. Nu is er weinig
+          tijd om dit recht te zetten. Omdat jullie de laatste tijd veel hebben geleerd over hypotheken, vraagt de
+          klas om hulp. Wees zorgvuldig, maar ook snel: dan geven jullie het beste advies.
         </p>
 
         <div className="mission-stats" aria-label="Missiegegevens">
-          <span>6 kamers</span>
-          <span>12 vragen</span>
-          <span>15 minuten</span>
-          <span>Client-side</span>
+          <span>5 onderzoeken</span>
+          <span>27 controles</span>
+          <span>1 centrale casus</span>
+          <span>adviesmemo</span>
         </div>
 
         <div className="actions">

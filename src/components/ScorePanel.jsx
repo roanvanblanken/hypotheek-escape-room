@@ -5,7 +5,7 @@ function ScorePanel({ secondsRemaining, mistakes, hintsUsed, completed = false }
 
   return (
     <section className="score-panel">
-      <span className="panel-label">Score</span>
+      <span className="panel-label">Dossierstatus</span>
       <strong>{score}</strong>
       <dl>
         <div>

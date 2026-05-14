@@ -1,111 +1,197 @@
 import { useState } from "react";
-import HintPanel from "./HintPanel";
 
 function EvidencePuzzle({
   puzzle,
+  draftAnswer,
   status,
   feedback,
-  hintVisible,
   evidence,
   evidenceUnlocked,
-  onSubmit,
-  onShowHint,
+  onDraftAnswer,
 }) {
-  const [answer, setAnswer] = useState("");
+  const [answer, setAnswer] = useState(() => (typeof draftAnswer === "string" || typeof draftAnswer === "number" ? String(draftAnswer) : ""));
+  const [selectedAnswers, setSelectedAnswers] = useState(() => (Array.isArray(draftAnswer) ? draftAnswer : []));
+  const [matchingAnswers, setMatchingAnswers] = useState(() =>
+    draftAnswer && typeof draftAnswer === "object" && !Array.isArray(draftAnswer) ? draftAnswer : {},
+  );
+  const [open, setOpen] = useState(false);
+  const [saved, setSaved] = useState(draftAnswer !== undefined);
   const solved = status === "correct";
+  const labelOffset = puzzle.id.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  const labelPool = ["K", "M", "R", "T", "V", "Z", "L", "P", "N", "S", "W", "G"];
 
-  function handleSubmit(event) {
-    event.preventDefault();
-    onSubmit(puzzle.id, answer);
+  function displayLetter(optionKey, index) {
+    return puzzle.optionLetters?.[optionKey] || labelPool[(labelOffset + index * 3) % labelPool.length];
   }
 
-  return (
-    <article className={`evidence-puzzle ${solved ? "solved" : ""}`}>
-      <header className="terminal-header">
-        <span>{puzzle.type}</span>
-        <strong>{solved ? "bewijs vrij" : "analyse nodig"}</strong>
-      </header>
+  function currentAnswer() {
+    if (puzzle.type === "multipleSelect") {
+      return selectedAnswers;
+    }
 
-      <div className="terminal-body">
-        <p className="terminal-title">{puzzle.title}</p>
-        <p className="narrative">{puzzle.narrative}</p>
-        <p className="task-line">{puzzle.task}</p>
+    if (puzzle.type === "matching") {
+      return matchingAnswers;
+    }
 
-        <form onSubmit={handleSubmit}>
-          {puzzle.type === "numeric" && (
-            <label>
-              Berekening
+    return answer;
+  }
+
+  function handleSave(event) {
+    event.preventDefault();
+    onDraftAnswer(puzzle.id, currentAnswer());
+    setSaved(true);
+    setOpen(false);
+  }
+
+  function toggleSelected(value) {
+    setSelectedAnswers((current) =>
+      current.includes(value) ? current.filter((item) => item !== value) : [...current, value],
+    );
+  }
+
+  const form = (
+    <form onSubmit={handleSave}>
+      {puzzle.type === "numeric" && (
+        <label>
+          Berekening
+          <input
+            inputMode="decimal"
+            value={answer}
+            onChange={(event) => setAnswer(event.target.value)}
+            placeholder="typ je analyse"
+            disabled={solved}
+          />
+        </label>
+      )}
+
+      {puzzle.type === "multipleChoice" && (
+        <fieldset disabled={solved}>
+          <legend>Selecteer dossierregel</legend>
+          {Object.entries(puzzle.options).map(([key, value], index) => (
+            <label className="choice" key={key}>
               <input
-                inputMode="decimal"
-                value={answer}
+                type="radio"
+                name={puzzle.id}
+                value={key}
+                checked={answer === key}
                 onChange={(event) => setAnswer(event.target.value)}
-                placeholder="typ je analyse"
-                disabled={solved}
               />
+              <span>{displayLetter(key, index)}</span>
+              {value}
             </label>
-          )}
+          ))}
+        </fieldset>
+      )}
 
-          {puzzle.type === "multipleChoice" && (
-            <fieldset disabled={solved}>
-              <legend>Selecteer dossierregel</legend>
-              {Object.entries(puzzle.options).map(([key, value]) => (
-                <label className="choice" key={key}>
-                  <input
-                    type="radio"
-                    name={puzzle.id}
-                    value={key}
-                    checked={answer === key}
-                    onChange={(event) => setAnswer(event.target.value)}
-                  />
-                  <span>{key}</span>
-                  {value}
-                </label>
-              ))}
-            </fieldset>
-          )}
-
-          {(puzzle.type === "sequence" || puzzle.type === "matching") && (
-            <label>
-              Experimentele invoer
+      {puzzle.type === "multipleSelect" && (
+        <fieldset disabled={solved}>
+          <legend>Selecteer alle passende dossierregels</legend>
+          {Object.entries(puzzle.options).map(([key, value], index) => (
+            <label className="choice" key={key}>
               <input
-                value={answer}
-                onChange={(event) => setAnswer(event.target.value)}
-                placeholder="basisstructuur voor later"
-                disabled={solved}
+                type="checkbox"
+                value={key}
+                checked={selectedAnswers.includes(key)}
+                onChange={() => toggleSelected(key)}
               />
+              <span>{displayLetter(key, index)}</span>
+              {value}
             </label>
-          )}
+          ))}
+        </fieldset>
+      )}
 
-          <div className="puzzle-actions">
-            <button className="primary-button compact" type="submit" disabled={solved}>
-              {solved ? "Bewijsstuk vrij" : "Ontgrendel bewijsstuk"}
-            </button>
-            <button
-              className="ghost-button compact"
-              type="button"
-              onClick={() => onShowHint(puzzle.id)}
-              disabled={hintVisible}
-            >
-              Dossierhint
-            </button>
+      {puzzle.type === "matching" && (
+        <div className="matching-grid">
+          <div className="meaning-list">
+            {Object.entries(puzzle.meanings).map(([key, value]) => (
+              <p key={key}>
+                <strong>{key}</strong> {value}
+              </p>
+            ))}
           </div>
-        </form>
+          {puzzle.matches.map((item) => (
+            <label key={item.term}>
+              {item.term}
+              <select
+                value={matchingAnswers[item.term] || ""}
+                onChange={(event) =>
+                  setMatchingAnswers((current) => ({ ...current, [item.term]: event.target.value }))
+                }
+                disabled={solved}
+              >
+                <option value="">Kies betekenis</option>
+                {Object.keys(puzzle.meanings).map((key) => (
+                  <option key={key} value={key}>
+                    {key}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ))}
+        </div>
+      )}
 
-        <HintPanel hint={puzzle.hint} visible={hintVisible} onShowHint={() => onShowHint(puzzle.id)} />
+      <div className="puzzle-actions">
+        <button className="primary-button compact" type="submit" disabled={solved}>
+          {solved ? "Bewijsstuk vrij" : "Leg vast in dossier"}
+        </button>
+      </div>
+    </form>
+  );
 
-        {feedback && (
-          <p className={`feedback ${solved ? "correct" : "incorrect"}`} role="status">
-            {feedback}
-          </p>
-        )}
+  return (
+    <>
+      <article className={`evidence-puzzle puzzle-card ${solved ? "solved" : ""}`}>
+        <button className="puzzle-card-trigger" type="button" onClick={() => setOpen(true)}>
+          <span className="terminal-line">{puzzle.type}</span>
+          <strong>{puzzle.title}</strong>
+          <small>{solved ? "bewijsstuk vrij" : saved ? "keuze vastgelegd" : "klik om dossierkaart te openen"}</small>
+        </button>
 
         <div className={`evidence-slot ${evidenceUnlocked ? "unlocked" : ""}`}>
           <span className="panel-label">Gekoppeld bewijs</span>
-          <strong>{evidenceUnlocked ? evidence.title : "vergrendeld object"}</strong>
-          <p>{evidenceUnlocked ? evidence.clue : "Los deze handeling op om een aanwijzing of object vrij te spelen."}</p>
+          <strong>{evidenceUnlocked ? evidence.title : "nog niet vrijgegeven"}</strong>
+          <p>{evidenceUnlocked ? evidence.clue : "Open de dossierkaart om dit bewijsstuk vrij te spelen."}</p>
         </div>
-      </div>
-    </article>
+      </article>
+
+      {open && (
+        <div className="puzzle-modal-backdrop" role="presentation" onMouseDown={() => setOpen(false)}>
+          <section
+            className="puzzle-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={`${puzzle.id}-title`}
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <header>
+              <div>
+                <span className="panel-label">{puzzle.type}</span>
+                <h2 id={`${puzzle.id}-title`}>{puzzle.title}</h2>
+              </div>
+              <button className="icon-button compact" type="button" onClick={() => setOpen(false)}>
+                Sluit
+              </button>
+            </header>
+
+            <div className="puzzle-modal-body">
+              <p className="narrative">{puzzle.narrative}</p>
+              {puzzle.code && <pre className="code-snippet">{puzzle.code}</pre>}
+              <p className="task-line">{puzzle.task}</p>
+
+              {form}
+
+              {feedback && (
+                <p className={`feedback ${solved ? "correct" : "incorrect"}`} role="status">
+                  {feedback}
+                </p>
+              )}
+            </div>
+          </section>
+        </div>
+      )}
+    </>
   );
 }
 

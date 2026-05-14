@@ -1,29 +1,29 @@
 import { useState } from "react";
 import EvidenceModal from "./EvidenceModal";
 import EvidencePuzzle from "./EvidencePuzzle";
-import RoomCodePad from "./RoomCodePad";
 
 function RoomScreen({
   room,
   roomNumber,
   totalRooms,
+  draftAnswers,
   answers,
   feedback,
-  visibleHints,
+  roomFeedback,
   unlockedEvidence,
   roomSolved,
-  onSubmitAnswer,
-  onShowHint,
-  onSubmitRoomCode,
+  onDraftAnswer,
+  onSubmitRoomCheck,
 }) {
   const [activeEvidence, setActiveEvidence] = useState(null);
+  const [roomCode, setRoomCode] = useState("");
   const unlockedRoomEvidence = room.evidenceItems.filter((item) => unlockedEvidence.includes(item.id));
 
   return (
     <section className="room-screen">
       <header className="room-intro">
         <div>
-          <span className="terminal-line">Kamer {roomNumber} / {totalRooms} - {room.location}</span>
+          <span className="terminal-line">Onderzoek {roomNumber} / {totalRooms} - {room.location}</span>
           <h2>{room.title}</h2>
           <p>{room.subtitle}</p>
         </div>
@@ -67,13 +67,12 @@ function RoomScreen({
               <EvidencePuzzle
                 key={puzzle.id}
                 puzzle={puzzle}
+                draftAnswer={draftAnswers[puzzle.id]}
                 status={answers[puzzle.id]}
                 feedback={feedback[puzzle.id]}
-                hintVisible={visibleHints.includes(puzzle.id)}
                 evidence={evidence}
                 evidenceUnlocked={unlockedEvidence.includes(puzzle.unlocksEvidenceId)}
-                onSubmit={onSubmitAnswer}
-                onShowHint={onShowHint}
+                onDraftAnswer={onDraftAnswer}
               />
             );
           })}
@@ -81,13 +80,34 @@ function RoomScreen({
       </div>
 
       <footer className="room-footer">
-        <RoomCodePad
-          room={room}
-          solved={roomSolved}
-          evidenceCount={unlockedRoomEvidence.length}
-          totalEvidence={room.evidenceItems.length}
-          onSubmitCode={onSubmitRoomCode}
-        />
+        <section className={`room-codepad ${roomSolved ? "solved" : ""}`}>
+          <div>
+            <span className="panel-label">Codeslot</span>
+            <h3>{roomSolved ? "Onderzoek geopend" : "Vorm het codewoord"}</h3>
+            <p>
+              Lees de letters van jullie ingevulde dossierkaarten en hussel ze tot een passend codewoord.
+              Bewijsstukken: {unlockedRoomEvidence.length}/{room.evidenceItems.length}.
+            </p>
+            {roomFeedback && <p className={`feedback ${roomSolved ? "correct" : "incorrect"}`}>{roomFeedback}</p>}
+          </div>
+          <form className="room-code-form" onSubmit={(event) => {
+            event.preventDefault();
+            onSubmitRoomCheck(room.id, roomCode);
+          }}>
+            <label>
+              Codewoord
+              <input
+                value={roomCode}
+                onChange={(event) => setRoomCode(event.target.value)}
+                placeholder="woord"
+                disabled={roomSolved}
+              />
+            </label>
+            <button className="primary-button compact" type="submit" disabled={roomSolved}>
+              Open
+            </button>
+          </form>
+        </section>
         <div className="mini-evidence-rail" aria-label="Bewijsstukken in deze kamer">
           {room.evidenceItems.map((item) => {
             const unlocked = unlockedEvidence.includes(item.id);
@@ -100,8 +120,8 @@ function RoomScreen({
                 disabled={!unlocked}
                 onClick={() => setActiveEvidence({ ...item, roomTitle: room.shortTitle })}
               >
-                <span>{unlocked ? item.type : "locked"}</span>
-                <strong>{unlocked ? item.title : "Verborgen bewijsstuk"}</strong>
+                <span>{unlocked ? item.type : "nog dicht"}</span>
+                <strong>{unlocked ? item.inventoryLabel : "bewijs"}</strong>
               </button>
             );
           })}

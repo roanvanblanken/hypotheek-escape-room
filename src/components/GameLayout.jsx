@@ -1,4 +1,4 @@
-import EvidenceBoard from "./EvidenceBoard";
+import HintDesk from "./HintDesk";
 import Inventory from "./Inventory";
 import RoomNavigator from "./RoomNavigator";
 import ScorePanel from "./ScorePanel";
@@ -14,8 +14,10 @@ function GameLayout({
   completedRooms,
   unlockedRooms,
   unlockedEvidence,
+  visibleHints,
   onSelectRoom,
   onShowOverview,
+  onShowHint,
   onReset,
   muted,
   onToggleMute,
@@ -24,12 +26,12 @@ function GameLayout({
     <main className="game-shell">
       <header className="topbar">
         <div>
-          <p className="eyebrow">De Hypotheekkluis</p>
-          <h1>Onderzoeksruimte</h1>
+          <p className="eyebrow">De Hypotheekcheck</p>
+          <h1>Herstel het adviesdossier</h1>
         </div>
         <div className="topbar-controls">
           <button className="icon-button" type="button" onClick={onToggleMute} aria-label="Geluid dempen">
-            {muted ? "Muted" : "Audio"}
+            {muted ? "Stil" : "Audio"}
           </button>
           <button className="ghost-button" type="button" onClick={onReset}>
             Reset
@@ -58,16 +60,12 @@ function GameLayout({
             mistakes={mistakes}
             hintsUsed={hintsUsed}
           />
-          <Inventory rooms={rooms} unlockedEvidence={unlockedEvidence} />
-          <EvidenceBoard
-            rooms={rooms}
-            unlockedEvidence={unlockedEvidence}
-            completedRooms={completedRooms}
+          <HintDesk
+            visibleHints={visibleHints}
+            onShowHint={onShowHint}
+            secondsRemaining={secondsRemaining}
           />
-          <div className="audio-placeholder">
-            <span className="panel-label">Audio placeholder</span>
-            <p>Later: kluisdeur, terminalpiep, tikklok en dossierprinter.</p>
-          </div>
+          <Inventory rooms={rooms} unlockedEvidence={unlockedEvidence} />
         </aside>
       </section>
     </main>

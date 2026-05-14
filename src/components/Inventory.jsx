@@ -1,30 +1,13 @@
-import { useState } from "react";
-import EvidenceModal from "./EvidenceModal";
-
 function Inventory({ rooms, unlockedEvidence }) {
-  const [activeItem, setActiveItem] = useState(null);
-  const items = rooms.flatMap((room) =>
-    room.evidenceItems
-      .filter((item) => unlockedEvidence.includes(item.id))
-      .map((item) => ({ ...item, label: item.inventoryLabel, roomTitle: room.shortTitle })),
-  );
+  const total = rooms.reduce((sum, room) => sum + room.evidenceItems.length, 0);
 
   return (
     <section className="inventory">
-      <span className="panel-label">Inventory</span>
-      <div className="inventory-grid">
-        {items.length === 0 ? (
-          <p>Objecten zoals rentetabel, dossierkaart en aflossingsstrook komen hier.</p>
-        ) : (
-          items.map((item) => (
-            <button className="inventory-item" key={item.id} type="button" onClick={() => setActiveItem(item)}>
-              <span>{item.type}</span>
-              <strong>{item.label}</strong>
-            </button>
-          ))
-        )}
-      </div>
-      <EvidenceModal item={activeItem} onClose={() => setActiveItem(null)} />
+      <span className="panel-label">Bewijsmap</span>
+      <strong>
+        {unlockedEvidence.length}/{total}
+      </strong>
+      <p>Bewijsstukken komen vrij zodra een heel onderzoek klopt.</p>
     </section>
   );
 }

@@ -35,7 +35,7 @@ function StoryIntro({ onComplete, onBack }) {
             ))}
           </div>
           <button className="primary-button" type="button" onClick={nextScene}>
-            {isLast ? "Open kamerkaart" : "Volgende scene"}
+            {isLast ? "Open dossier" : "Volgende stap"}
           </button>
         </div>
       </section>

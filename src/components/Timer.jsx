@@ -8,8 +8,8 @@ function Timer({ secondsRemaining }) {
   const urgent = secondsRemaining <= 180;
 
   return (
-    <div className={`timer ${urgent ? "urgent" : ""}`} aria-label="Resterende tijd">
-      <span className="panel-label">Timer</span>
+    <div className={`timer ${urgent ? "urgent" : ""}`} aria-label="Beschikbaar werkblok">
+      <span className="panel-label">Werkblok</span>
       <strong>{formatTime(secondsRemaining)}</strong>
     </div>
   );

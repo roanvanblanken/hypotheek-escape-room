@@ -1,32 +1,30 @@
 export const storyScenes = [
   {
-    imageAlt: "Stagepas bij NovaBank op een donker bureau",
-    visualLabel: "Screenshot 1",
-    subtitle: "Je loopt stage bij de afdeling Hypotheekanalyse van NovaBank.",
-    optionalCaption: "08:42 - kelderniveau, dossierarchief",
+    imageAlt: "Keukentafel met huurpapieren, koopcontract en hypotheekmap",
+    visualLabel: "De vraag",
+    subtitle:
+      "De ouders van een goede vriend van jullie willen een huis kopen. Ze huren nu nog en hebben geen ervaring met kopen.",
+    optionalCaption: "Ze hebben snel betrouwbaar hypotheekadvies nodig.",
   },
   {
-    imageAlt: "Oud hypotheekdossier dat rood oplicht",
-    visualLabel: "Screenshot 2",
-    subtitle: "Een oud klantdossier activeert plots een beveiligingsprotocol.",
-    optionalCaption: "Dossier NVB-1978 opent zonder toestemming",
+    imageAlt: "Hypotheekdossier met rode fouten en een waarschuwing op het scherm",
+    visualLabel: "Het probleem",
+    subtitle:
+      "Daarom hadden ze een hypotheekadviseur aangenomen. Die bleek helaas een oplichter en heeft het dossier slecht ingevuld.",
+    optionalCaption: "Bedragen, berekeningen en code kloppen niet.",
   },
   {
-    imageAlt: "Bankkluisdeur die automatisch sluit",
-    visualLabel: "Screenshot 3",
-    subtitle: "De hypotheekkluis sluit automatisch en alle uitgangen vergrendelen.",
-    optionalCaption: "Protocol: REKENKAMER-6",
+    imageAlt: "Leerlingen verdelen controlekaarten en rekenbladen",
+    visualLabel: "Jullie missie",
+    subtitle:
+      "De ouders kwamen hier laat achter. Omdat jullie over hypotheken hebben geleerd, vragen ze de hele klas om hulp.",
+    optionalCaption: "Werk zorgvuldig, verdeel het werk slim en blijf snel.",
   },
   {
-    imageAlt: "Terminal met formules voor rente en aflossing",
-    visualLabel: "Screenshot 4",
-    subtitle: "Alleen wie rente, aflossing, looptijd en risico begrijpt, kan de kluis openen.",
-    optionalCaption: "Toegang vereist: bedrijfseconomie + wiskunde",
-  },
-  {
-    imageAlt: "Zes digitale kamers rondom een centrale kluis",
-    visualLabel: "Screenshot 5",
-    subtitle: "Zes digitale kamers bevatten samen de eindcode.",
-    optionalCaption: "Verzamel bewijsstukken. Leid de codes zelf af.",
+    imageAlt: "Adviesmemo met vergelijking tussen lineair en annuitair",
+    visualLabel: "Het advies",
+    subtitle:
+      "Spoor de fouten op, controleer de berekeningen en geef uiteindelijk het beste onderbouwde hypotheekadvies.",
+    optionalCaption: "Goed advies is belangrijker dan alleen het eerste antwoord.",
   },
 ];

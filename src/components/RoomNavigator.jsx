@@ -1,8 +1,8 @@
 function RoomNavigator({ rooms, currentRoomIndex, completedRooms, unlockedRooms, onSelectRoom, onShowOverview }) {
   return (
-    <nav className="room-navigator" aria-label="Kamerkaart">
+    <nav className="room-navigator" aria-label="Onderzoeksdossier">
       <div className="nav-heading">
-        <span className="panel-label">Kamerkaart</span>
+        <span className="panel-label">Onderzoeken</span>
         <button className="ghost-button compact" type="button" onClick={onShowOverview}>
           Overzicht
         </button>
@@ -23,7 +23,7 @@ function RoomNavigator({ rooms, currentRoomIndex, completedRooms, unlockedRooms,
               >
                 <span>{index + 1}</span>
                 <strong>{room.shortTitle}</strong>
-                <small>{unlocked ? (completed ? "opgelost" : "open") : "locked"}</small>
+                <small>{unlocked ? (completed ? "afgerond" : "open") : "nog dicht"}</small>
               </button>
             </li>
           );

@@ -2,11 +2,42 @@ export function normalizeChoice(value) {
   return String(value || "").trim().toUpperCase();
 }
 
+function numericCandidates(rawAnswer) {
+  const raw = String(rawAnswer || "")
+    .trim()
+    .replace(/\s/g, "")
+    .replace(/[€A-Za-z]/g, "");
+
+  if (!raw) {
+    return [];
+  }
+
+  const candidates = [];
+  const decimalComma = Number(raw.replace(/\./g, "").replace(",", "."));
+  const decimalPoint = Number(raw.replace(/,/g, ""));
+  const noThousands = Number(raw.replace(/\./g, "").replace(",", "."));
+
+  [decimalComma, decimalPoint, noThousands].forEach((value) => {
+    if (Number.isFinite(value) && !candidates.includes(value)) {
+      candidates.push(value);
+    }
+  });
+
+  return candidates;
+}
+
+function cleanFeedback(message) {
+  return String(message || "")
+    .replace(/^Correct\.?\s*/i, "")
+    .replace(/^Nog niet\.?\s*/i, "")
+    .trim();
+}
+
 export function checkAnswer(question, rawAnswer) {
   if (question.type === "numeric") {
-    const parsed = Number(String(rawAnswer).replace(",", "."));
+    const candidates = numericCandidates(rawAnswer);
 
-    if (!Number.isFinite(parsed)) {
+    if (candidates.length === 0) {
       return {
         correct: false,
         message: "De terminal accepteert alleen cijfers voor deze analyse.",
@@ -14,13 +45,13 @@ export function checkAnswer(question, rawAnswer) {
     }
 
     const tolerance = question.tolerance ?? 0;
-    const correct = Math.abs(parsed - question.answer) <= tolerance;
+    const correct = candidates.some((parsed) => Math.abs(parsed - question.answer) <= tolerance);
 
     return {
       correct,
       message: correct
-        ? question.successReveal
-        : question.wrongFeedback || `De berekening valt buiten de marge van ${tolerance}.`,
+        ? cleanFeedback(question.successReveal || "Dossiercontrole geaccepteerd. Er is een bewijsstuk vrijgegeven.")
+        : cleanFeedback(question.wrongFeedback || `Dit opent nog niets. Controleer je analyse en probeer opnieuw.`),
     };
   }
 
@@ -31,8 +62,21 @@ export function checkAnswer(question, rawAnswer) {
     return {
       correct,
       message: correct
-        ? question.successReveal
-        : question.wrongFeedback || "Die keuze ontgrendelt niets. Bekijk het bewijsstuk nog eens.",
+        ? "Dossierregel verwerkt. Er is een bewijsstuk vrijgegeven."
+        : "Deze keuze levert nog geen nieuw bewijs op. Controleer het dossier en probeer opnieuw.",
+    };
+  }
+
+  if (question.type === "multipleSelect") {
+    const selected = Array.isArray(rawAnswer) ? rawAnswer.map(normalizeChoice).sort() : [];
+    const expected = Array.isArray(question.answer) ? question.answer.map(normalizeChoice).sort() : [];
+    const correct = selected.length === expected.length && selected.every((value, index) => value === expected[index]);
+
+    return {
+      correct,
+      message: correct
+        ? "Dossierregels verwerkt. Er is een bewijsstuk vrijgegeven."
+        : "Deze combinatie levert nog geen nieuw bewijs op. Controleer het dossier en probeer opnieuw.",
     };
   }
 
@@ -43,18 +87,21 @@ export function checkAnswer(question, rawAnswer) {
 
     return {
       correct,
-      message: correct ? question.successReveal : question.wrongFeedback || "De volgorde klopt nog niet.",
+      message: correct
+        ? cleanFeedback(question.successReveal || "Dossiercontrole geaccepteerd. Er is een bewijsstuk vrijgegeven.")
+        : cleanFeedback(question.wrongFeedback || "De volgorde opent nog niets."),
     };
   }
 
   if (question.type === "matching") {
-    const normalized = String(rawAnswer || "").trim().toUpperCase();
-    const expected = String(question.answer || "").trim().toUpperCase();
-    const correct = normalized === expected;
+    const answers = rawAnswer && typeof rawAnswer === "object" ? rawAnswer : {};
+    const correct = question.matches.every((item) => normalizeChoice(answers[item.term]) === normalizeChoice(item.answer));
 
     return {
       correct,
-      message: correct ? question.successReveal : question.wrongFeedback || "De koppeling klopt nog niet.",
+      message: correct
+        ? "Vertaaltabel verwerkt. Er is een bewijsstuk vrijgegeven."
+        : "Deze koppeling levert nog geen nieuw bewijs op. Controleer het dossier en probeer opnieuw.",
     };
   }
 

@@ -5,19 +5,28 @@ import GameLayout from "./components/GameLayout";
 import RoomScreen from "./components/RoomScreen";
 import StartScreen from "./components/StartScreen";
 import StoryIntro from "./components/StoryIntro";
-import { rooms } from "./data/rooms";
+import { CASE_DATA, rooms } from "./data/rooms";
 import { checkAnswer } from "./utils/answerCheckers";
 import { clearProgress, loadProgress, saveProgress } from "./utils/storage";
 
 const GAME_SECONDS = 15 * 60;
+const CASE_LABELS = {
+  housePrice: "Kosten woning",
+  savings: "Spaargeld",
+  mortgage: "Hypotheek",
+  yearlyRate: "Jaarlijkse rente",
+  term: "Looptijd",
+};
 
 function createInitialProgress() {
   return {
     started: false,
     currentRoomIndex: 0,
     showOverview: false,
+    draftAnswers: {},
     answers: {},
     feedback: {},
+    roomFeedback: {},
     visibleHints: [],
     unlockedEvidence: [],
     completedRooms: [],
@@ -42,6 +51,8 @@ function normalizeProgress(saved) {
     unlockedEvidence: saved.unlockedEvidence || [],
     unlockedRooms: saved.unlockedRooms || initial.unlockedRooms,
     showOverview: saved.showOverview || false,
+    draftAnswers: saved.draftAnswers || {},
+    roomFeedback: saved.roomFeedback || {},
   };
 }
 
@@ -131,72 +142,75 @@ function App() {
     });
   }
 
-  function submitAnswer(puzzleId, rawAnswer) {
-    const roomForPuzzle = rooms.find((room) => room.puzzles.some((item) => item.id === puzzleId));
-    const puzzle = roomForPuzzle?.puzzles.find((item) => item.id === puzzleId);
-
-    if (!puzzle || progress.answers[puzzleId] === "correct") {
-      return;
-    }
-
-    const result = checkAnswer(puzzle, rawAnswer);
-
+  function saveDraftAnswer(puzzleId, rawAnswer) {
     setProgress((current) => {
-      const evidenceId = puzzle.unlocksEvidenceId;
-      const alreadyUnlocked = current.unlockedEvidence.includes(evidenceId);
-
       return {
         ...current,
-        answers: {
-          ...current.answers,
-          [puzzleId]: result.correct ? "correct" : "incorrect",
+        draftAnswers: {
+          ...current.draftAnswers,
+          [puzzleId]: rawAnswer,
         },
-        feedback: {
-          ...current.feedback,
-          [puzzleId]: result.message,
-        },
-        unlockedEvidence: result.correct && !alreadyUnlocked
-          ? [...current.unlockedEvidence, evidenceId]
-          : current.unlockedEvidence,
-        mistakes: result.correct ? current.mistakes : current.mistakes + 1,
       };
     });
   }
 
-  function submitRoomCode(roomId, rawCode) {
+  function submitRoomCheck(roomId, rawCode) {
     const room = rooms.find((item) => item.id === roomId);
-    const normalized = String(rawCode || "").trim().toUpperCase().replace(/\s+/g, "");
 
-    if (!room) {
-      return { correct: false, message: "Onbekende kamer." };
-    }
-
-    if (normalized !== room.roomCode) {
-      setProgress((current) => ({ ...current, mistakes: current.mistakes + 1 }));
-      return { correct: false, message: "Het slot klikt rood. Combineer de vrijgespeelde bewijsstukken." };
+    if (!room || progress.completedRooms.includes(room.id)) {
+      return;
     }
 
     setProgress((current) => {
+      const normalizedCode = String(rawCode || "").trim().toUpperCase().replace(/\s+/g, "");
+      const results = room.puzzles.map((puzzle) => ({
+        puzzle,
+        result: checkAnswer(puzzle, current.draftAnswers[puzzle.id]),
+      }));
+      const roomSolved = results.every((item) => item.result.correct) && normalizedCode === room.roomCode;
+
+      if (!roomSolved) {
+        return {
+          ...current,
+          mistakes: current.mistakes + 1,
+          roomFeedback: {
+            ...current.roomFeedback,
+            [room.id]: "Het codeslot blijft dicht. Er zit nog ergens een fout in de dossierkaarten of in het codewoord.",
+          },
+        };
+      }
+
+      const nextAnswers = { ...current.answers };
+      const nextFeedback = { ...current.feedback };
+      const nextEvidence = [...current.unlockedEvidence];
+
+      room.puzzles.forEach((puzzle) => {
+        nextAnswers[puzzle.id] = "correct";
+        nextFeedback[puzzle.id] = "Bewijsstuk vrijgegeven.";
+        if (!nextEvidence.includes(puzzle.unlocksEvidenceId)) {
+          nextEvidence.push(puzzle.unlocksEvidenceId);
+        }
+      });
+
       const completedRooms = current.completedRooms.includes(room.id)
         ? current.completedRooms
         : [...current.completedRooms, room.id];
-      const nextRoom = rooms[rooms.findIndex((item) => item.id === room.id) + 1];
-      const unlockedRooms = nextRoom && !current.unlockedRooms.includes(nextRoom.id)
-        ? [...current.unlockedRooms, nextRoom.id]
-        : current.unlockedRooms;
+      const unlockedRooms = room.id === "kenniscontrole" ? rooms.map((item) => item.id) : current.unlockedRooms;
 
       return {
         ...current,
+        answers: nextAnswers,
+        feedback: nextFeedback,
+        unlockedEvidence: nextEvidence,
         completedRooms,
         unlockedRooms,
         showOverview: true,
+        roomFeedback: {
+          ...current.roomFeedback,
+          [room.id]: "Code geaccepteerd. De bewijsstukken zijn aan het adviesdossier toegevoegd.",
+        },
       };
     });
-
-    return {
-      correct: true,
-      message: `Het kamerslot opent. Fragment ${room.codeFragment} is toegevoegd aan het evidence board.`,
-    };
   }
 
   function unlockFinalVault() {
@@ -226,37 +240,33 @@ function App() {
     completedRooms: progress.completedRooms,
     unlockedRooms: progress.unlockedRooms,
     unlockedEvidence: progress.unlockedEvidence,
+    visibleHints: progress.visibleHints,
     onSelectRoom: selectRoom,
     onShowOverview: showOverview,
+    onShowHint: showHint,
     onReset: resetGame,
     muted: progress.muted,
     onToggleMute: toggleMute,
   };
-
-  if (progress.secondsRemaining <= 0 && !progress.finalVaultOpen) {
-    return (
-      <GameLayout {...layoutProps}>
-        <section className="timeout-panel">
-          <p className="eyebrow">Tijd verstreken</p>
-          <h2>De kluis is opnieuw vergrendeld</h2>
-          <p>Reset de missie om nog een poging te wagen.</p>
-          <button className="primary-button" type="button" onClick={resetGame}>
-            Opnieuw starten
-          </button>
-        </section>
-      </GameLayout>
-    );
-  }
 
   return (
     <GameLayout {...layoutProps}>
       {progress.showOverview && !inFinalVault ? (
         <section className="overview-room">
           <p className="eyebrow">Overzicht</p>
-          <h2>Kies een digitale kamer</h2>
+          <h2>Adviesdossier van de ouders</h2>
           <p>
-            Wissel vrij tussen geopende kamers. Eerdere kamers blijven beschikbaar om bewijsstukken opnieuw te bekijken.
+            Rond de startcontrole af om de onderzoeksbladen tegelijk te openen. Daarna kunnen teams strategisch
+            verdelen wie welke controle uitvoert.
           </p>
+          <div className="case-strip" aria-label="Centrale casus">
+            {Object.entries(CASE_DATA).map(([key, value]) => (
+              <span key={key}>
+                <small>{CASE_LABELS[key]}</small>
+                {value}
+              </span>
+            ))}
+          </div>
           <div className="overview-grid">
             {rooms.map((room, index) => {
               const unlocked = progress.unlockedRooms.includes(room.id);
@@ -272,7 +282,7 @@ function App() {
                 >
                   <span>{room.shortTitle}</span>
                   <strong>{room.title}</strong>
-                  <small>{unlocked ? room.location : "vergrendeld"}</small>
+                  <small>{unlocked ? room.location : "na startcontrole"}</small>
                 </button>
               );
             })}
@@ -293,14 +303,16 @@ function App() {
           room={currentRoom}
           roomNumber={progress.currentRoomIndex + 1}
           totalRooms={rooms.length}
+          draftAnswers={progress.draftAnswers}
           answers={progress.answers}
           feedback={progress.feedback}
+          roomFeedback={progress.roomFeedback[currentRoom.id]}
           visibleHints={progress.visibleHints}
           unlockedEvidence={progress.unlockedEvidence}
           roomSolved={progress.completedRooms.includes(currentRoom.id)}
-          onSubmitAnswer={submitAnswer}
+          onDraftAnswer={saveDraftAnswer}
+          onSubmitRoomCheck={submitRoomCheck}
           onShowHint={showHint}
-          onSubmitRoomCode={submitRoomCode}
         />
       )}
     </GameLayout>
