@@ -747,12 +747,22 @@ p {
   cursor: pointer;
 }
 
+.hint-shop-grid button:disabled {
+  cursor: not-allowed;
+}
+
 .hint-shop-grid button.unlocked {
   border-color: rgba(22, 124, 107, 0.34);
 }
 
 .hint-shop-grid button.opened {
   background: rgba(22, 124, 107, 0.08);
+}
+
+.hint-shop-grid button.locked {
+  border-color: rgba(138, 22, 48, 0.2);
+  background: rgba(255, 255, 255, 0.34);
+  opacity: 0.58;
 }
 
 .hint-shop-grid span {
@@ -768,6 +778,16 @@ p {
   margin-top: 0.2rem;
   font-size: 0.88rem;
   line-height: 1.25;
+}
+
+.hint-shop-grid small {
+  display: block;
+  margin-top: 0.42rem;
+  color: #8a1630;
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1.3;
 }
 
 .hint-detail-backdrop {

@@ -21,6 +21,8 @@ function GameLayout({
   onReset,
   muted,
   onToggleMute,
+  gameSeconds,
+  hintUnlockIntervalSeconds,
 }) {
   return (
     <main className="game-shell">
@@ -70,6 +72,8 @@ function GameLayout({
             visibleHints={visibleHints}
             onShowHint={onShowHint}
             secondsRemaining={secondsRemaining}
+            gameSeconds={gameSeconds}
+            hintUnlockIntervalSeconds={hintUnlockIntervalSeconds}
           />
         </aside>
       </section>

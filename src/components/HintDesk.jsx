@@ -247,6 +247,17 @@ const HINTS = [
   },
 ];
 
+function formatCountdown(seconds) {
+  const safeSeconds = Math.max(0, Number(seconds) || 0);
+  const minutes = Math.floor(safeSeconds / 60);
+  const remainder = safeSeconds % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(remainder).padStart(2, "0")}`;
+}
+
+function getHintUnlockSeconds(index, intervalSeconds) {
+  return (Math.floor(index / 2) + 1) * intervalSeconds;
+}
+
 function InlineMath({ name }) {
   if (name === "nOverTwo") {
     return (
@@ -892,11 +903,35 @@ function HintBody({ hint }) {
   );
 }
 
-function HintDesk({ visibleHints, onShowHint }) {
+function HintDesk({
+  visibleHints,
+  onShowHint,
+  secondsRemaining,
+  gameSeconds = 30 * 60,
+  hintUnlockIntervalSeconds = 300,
+}) {
   const [open, setOpen] = useState(false);
   const [activeHint, setActiveHint] = useState(null);
+  const elapsedSeconds = Math.max(0, gameSeconds - secondsRemaining);
+  const hintStates = HINTS.map((hint, index) => {
+    const unlocksAfterSeconds = getHintUnlockSeconds(index, hintUnlockIntervalSeconds);
+    const blockedSeconds = Math.max(0, unlocksAfterSeconds - elapsedSeconds);
 
-  function openHint(hint) {
+    return {
+      hint,
+      blockedSeconds,
+      unlocked: blockedSeconds <= 0,
+      opened: visibleHints.includes(hint.id),
+    };
+  });
+  const unlockedCount = hintStates.filter((state) => state.unlocked).length;
+  const nextBlockedSeconds = hintStates.find((state) => !state.unlocked)?.blockedSeconds ?? 0;
+
+  function openHint(hint, unlocked) {
+    if (!unlocked) {
+      return;
+    }
+
     onShowHint(hint.id);
     setActiveHint(hint);
   }
@@ -908,7 +943,10 @@ function HintDesk({ visibleHints, onShowHint }) {
         <button className="primary-button compact hint-desk-button" type="button" onClick={() => setOpen(true)}>
           Bekijk hints
         </button>
-        <p>Alle {HINTS.length} hints zijn beschikbaar</p>
+        <p>
+          {unlockedCount} van {HINTS.length} hints vrij
+          {nextBlockedSeconds > 0 ? ` - volgende ontgrendeling na: ${formatCountdown(nextBlockedSeconds)}` : ""}
+        </p>
       </section>
 
       {open && (
@@ -931,18 +969,18 @@ function HintDesk({ visibleHints, onShowHint }) {
             </header>
 
             <div className="hint-shop-grid">
-              {HINTS.map((hint, index) => {
-                const opened = visibleHints.includes(hint.id);
-
+              {hintStates.map(({ hint, blockedSeconds, unlocked, opened }, index) => {
                 return (
                   <button
-                    className={`unlocked ${opened ? "opened" : ""}`}
+                    className={`${unlocked ? "unlocked" : "locked"} ${opened ? "opened" : ""}`}
                     key={hint.id}
                     type="button"
-                    onClick={() => openHint(hint)}
+                    disabled={!unlocked}
+                    onClick={() => openHint(hint, unlocked)}
                   >
                     <span>Hint {index + 1}</span>
                     <strong>{hint.title}</strong>
+                    {!unlocked && <small>Wordt ontgrendeld na: {formatCountdown(blockedSeconds)}</small>}
                   </button>
                 );
               })}

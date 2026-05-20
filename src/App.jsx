@@ -8,9 +8,10 @@ import { CASE_DATA, rooms } from "./data/rooms";
 import { checkAnswer, isQuestionFilled } from "./utils/answerCheckers";
 import { clearProgress, loadProgress, saveProgress } from "./utils/storage";
 
-const GAME_SECONDS = 15 * 60;
+const GAME_SECONDS = 30 * 60;
 const FIFTY_FIFTY_INITIAL_WAIT_SECONDS = 300;
 const FIFTY_FIFTY_COOLDOWN_SECONDS = 60;
+const HINT_UNLOCK_INTERVAL_SECONDS = 300;
 const CASE_LABELS = {
   housePrice: "Kosten woning",
   savings: "Spaargeld",
@@ -398,6 +399,8 @@ function App() {
     onReset: resetGame,
     muted: progress.muted,
     onToggleMute: toggleMute,
+    gameSeconds: GAME_SECONDS,
+    hintUnlockIntervalSeconds: HINT_UNLOCK_INTERVAL_SECONDS,
   };
 
   const initialFiftyFiftyBlockedSeconds = Math.max(
