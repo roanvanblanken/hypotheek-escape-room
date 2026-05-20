@@ -47,22 +47,31 @@ export const rooms = [
       "De ouders willen natuurlijk wel even checken of jullie echt wat afweten van hypotheken, hiervoor hebben ze een aantal vragen voor jullie.",
     location: "Kennistest",
     atmosphere: "Beantwoord de vragen en laat zien dat jullie de basis van hypotheken begrijpen.",
-    escapeCode: "ADVIES",
+    escapeCode: "ADVISEUR",
     puzzles: [
       {
         id: "k1-p1",
         type: "multipleChoice",
         title: "Voordelen en nadelen van kopen",
         narrative: "Ten eerste willen ze meer weten over de mogelijke voordelen of nadelen van kopen.",
-        task: "welke stelling is waar?",
-        codeLetter: "V",
+        task: "Welke stelling is waar?",
         options: {
           A: "als je gaat kopen betaal je minder energiekosten omdat het huis beter geïsoleerd is",
           B: "als je gaat huren heb je meer spaargeld nodig omdat je een borg moet betalen",
           C: "als je gaat kopen zijn je maandlasten lager omdat het huis meer waard wordt",
           D: "als je huurt ben je flexibeler als je nog niet zeker weet of je ergens lang wilt blijven wonen",
         },
+        optionLetters: {
+          A: "K",
+          B: "M",
+          C: "O",
+          D: "A",
+        },
         answer: "D",
+        correctAnswerIds: ["D"],
+        answerLetters: {
+          D: "A",
+        },
       },
       {
         id: "k1-p2",
@@ -71,14 +80,24 @@ export const rooms = [
         narrative:
           "Voor het afbetalen van de hypotheek is er keuze tussen twee soorten aflos methoden, annuïtair en lineair.",
         task: "welke uitspraken horen sowieso bij een annuïtaire hypotheek:",
-        codeLetter: "A",
         options: {
           A: "Je maandbedrag is elke maand hetzelfde",
           B: "Je lost elke maand evenveel af",
           C: "Je betaalt elke maand een lager rentedeel",
           D: "Het maandelijkse rentepercentage daalt omdat je steeds minder schuld hebt",
         },
+        optionLetters: {
+          A: "D",
+          B: "L",
+          C: "V",
+          D: "P",
+        },
         answer: ["A", "C"],
+        correctAnswerIds: ["A", "C"],
+        answerLetters: {
+          A: "D",
+          C: "V",
+        },
       },
       {
         id: "k1-p3",
@@ -86,14 +105,24 @@ export const rooms = [
         title: "Lineaire hypotheek",
         narrative: "",
         task: "Welke uitspraken horen sowieso bij een lineaire hypotheek/aflossing:",
-        codeLetter: "I",
         options: {
           A: "Het rentepercentage wordt steeds lager",
           B: "Het rentedeel wordt steeds lager",
           C: "Het maandbedrag wordt steeds lager",
           D: "Het aflossingsdeel wordt steeds lager",
         },
+        optionLetters: {
+          A: "T",
+          B: "I",
+          C: "S",
+          D: "N",
+        },
         answer: ["B", "C"],
+        correctAnswerIds: ["B", "C"],
+        answerLetters: {
+          B: "I",
+          C: "S",
+        },
       },
       {
         id: "k1-p4",
@@ -101,14 +130,23 @@ export const rooms = [
         title: "Documenten voor de bank",
         narrative: "Natuurlijk moeten er ook documenten naar de bank worden opgestuurd.",
         task: "Welke informatie heeft de bank NIET nodig als je een hypotheek wilt afsluiten?",
-        codeLetter: "D",
         options: {
           A: "de hoogte van je inkomen",
           B: "leningen die je hebt lopen",
           C: "je huidige huurkosten",
           D: "beschikbaar spaargeld",
         },
+        optionLetters: {
+          A: "B",
+          B: "G",
+          C: "E",
+          D: "K",
+        },
         answer: "C",
+        correctAnswerIds: ["C"],
+        answerLetters: {
+          C: "E",
+        },
       },
       {
         id: "k1-p5",
@@ -118,14 +156,23 @@ export const rooms = [
         code:
           "def bereken_maandbedrag(bedrag, rente):\n   maandbedrag = bedrag * rente\n   return maandbedrag\n\nrente = 0.0035\nuitkomst = bereken_maandbedrag(250000, rente)",
         task: "Welke uitspraak over deze code is waar?",
-        codeLetter: "E",
         options: {
           A: "uitkomst is de naam van de functie",
           B: "rente krijgt binnen de functie automatisch de waarde 250000",
           C: "maandbedrag kan buiten de functie direct gebruikt worden",
           D: "bedrag krijgt tijdelijk de waarde 250000 binnen de functie",
         },
+        optionLetters: {
+          A: "N",
+          B: "O",
+          C: "T",
+          D: "U",
+        },
         answer: "D",
+        correctAnswerIds: ["D"],
+        answerLetters: {
+          D: "U",
+        },
       },
       {
         id: "k1-p6",
@@ -135,14 +182,23 @@ export const rooms = [
         code:
           "schuld = 5000\nmaand = 0\naflossing = 1200\n\nwhile schuld > 0:\n   maand = maand + 1\n   schuld = schuld - aflossing\n\nprint(maand)\nprint(schuld)",
         task: "Welke uitspraak over deze code is waar?",
-        codeLetter: "S",
         options: {
           A: "De code print 5 en 0, omdat Python de schuld automatisch op 0 afrondt",
           B: "De code print 5 en -1000, omdat de loop doorgaat totdat de schuld niet meer groter is dan 0",
           C: "De code print 4 en 200, omdat er na 4 maanden nog 200 euro schuld over is",
           D: "De code geeft een foutmelding, omdat schuld negatief kan worden",
         },
+        optionLetters: {
+          A: "L",
+          B: "R",
+          C: "M",
+          D: "P",
+        },
         answer: "B",
+        correctAnswerIds: ["B"],
+        answerLetters: {
+          B: "R",
+        },
       },
     ],
   },

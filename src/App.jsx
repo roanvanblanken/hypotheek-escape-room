@@ -5,10 +5,12 @@ import RoomScreen from "./components/RoomScreen";
 import StartScreen from "./components/StartScreen";
 import StoryIntro from "./components/StoryIntro";
 import { CASE_DATA, rooms } from "./data/rooms";
-import { checkAnswer } from "./utils/answerCheckers";
+import { checkAnswer, isQuestionFilled } from "./utils/answerCheckers";
 import { clearProgress, loadProgress, saveProgress } from "./utils/storage";
 
 const GAME_SECONDS = 15 * 60;
+const FIFTY_FIFTY_INITIAL_WAIT_SECONDS = 300;
+const FIFTY_FIFTY_COOLDOWN_SECONDS = 60;
 const CASE_LABELS = {
   housePrice: "Kosten woning",
   savings: "Spaargeld",
@@ -32,6 +34,9 @@ function createInitialProgress() {
     mistakes: 0,
     hintsUsed: 0,
     fiftyFiftyPuzzleId: null,
+    fiftyFiftyUsedPuzzleIds: [],
+    fiftyFiftyOptionsByPuzzle: {},
+    fiftyFiftyCooldownUntil: null,
     secondsRemaining: GAME_SECONDS,
     finalVaultOpen: false,
     muted: false,
@@ -52,6 +57,10 @@ function normalizeProgress(saved) {
     draftAnswers: saved.draftAnswers || {},
     roomFeedback: saved.roomFeedback || {},
     fiftyFiftyPuzzleId: saved.fiftyFiftyPuzzleId || null,
+    fiftyFiftyUsedPuzzleIds:
+      saved.fiftyFiftyUsedPuzzleIds || (saved.fiftyFiftyPuzzleId ? [saved.fiftyFiftyPuzzleId] : []),
+    fiftyFiftyOptionsByPuzzle: saved.fiftyFiftyOptionsByPuzzle || {},
+    fiftyFiftyCooldownUntil: saved.fiftyFiftyCooldownUntil ?? null,
   };
 }
 
@@ -136,15 +145,25 @@ function App() {
     });
   }
 
-  function useFiftyFifty(puzzleId) {
+  function useFiftyFifty(puzzleId, optionsToHide = []) {
     setProgress((current) => {
-      if (current.fiftyFiftyPuzzleId) {
+      const initialBlocked = current.secondsRemaining > GAME_SECONDS - FIFTY_FIFTY_INITIAL_WAIT_SECONDS;
+      const cooldownBlocked =
+        Number.isFinite(current.fiftyFiftyCooldownUntil) && current.secondsRemaining > current.fiftyFiftyCooldownUntil;
+
+      if (initialBlocked || cooldownBlocked || current.fiftyFiftyUsedPuzzleIds.includes(puzzleId)) {
         return current;
       }
 
       return {
         ...current,
-        fiftyFiftyPuzzleId: puzzleId,
+        fiftyFiftyPuzzleId: current.fiftyFiftyPuzzleId || puzzleId,
+        fiftyFiftyUsedPuzzleIds: [...current.fiftyFiftyUsedPuzzleIds, puzzleId],
+        fiftyFiftyOptionsByPuzzle: {
+          ...current.fiftyFiftyOptionsByPuzzle,
+          [puzzleId]: optionsToHide,
+        },
+        fiftyFiftyCooldownUntil: Math.max(0, current.secondsRemaining - FIFTY_FIFTY_COOLDOWN_SECONDS),
         hintsUsed: current.hintsUsed + 1,
       };
     });
@@ -209,6 +228,19 @@ function App() {
         };
       }
 
+      const incomplete = room.puzzles.some((puzzle) => !isQuestionFilled(puzzle, current.draftAnswers[puzzle.id]));
+
+      if (incomplete) {
+        return {
+          ...current,
+          mistakes: current.mistakes + 1,
+          roomFeedback: {
+            ...current.roomFeedback,
+            [room.id]: "Nog niet alle vragen zijn ingevuld. Open de ontbrekende vragen en probeer het daarna opnieuw.",
+          },
+        };
+      }
+
       const results = room.puzzles.map((puzzle) => ({
         puzzle,
         result: checkAnswer(puzzle, current.draftAnswers[puzzle.id]),
@@ -221,7 +253,7 @@ function App() {
           mistakes: current.mistakes + 1,
           roomFeedback: {
             ...current.roomFeedback,
-            [room.id]: "Nog niet alle antwoorden kloppen. Open de vragen, verbeter je antwoorden en probeer opnieuw.",
+            [room.id]: "Er klopt nog iets niet in je antwoorden. Controleer je keuzes en probeer het opnieuw.",
           },
         };
       }
@@ -229,13 +261,24 @@ function App() {
       if (room.escapeCode) {
         const normalizedCode = String(rawCode || "").trim().toUpperCase().replace(/\s+/g, "");
 
+        if (!normalizedCode) {
+          return {
+            ...current,
+            mistakes: current.mistakes + 1,
+            roomFeedback: {
+              ...current.roomFeedback,
+              [room.id]: "Vul eerst het codewoord in.",
+            },
+          };
+        }
+
         if (normalizedCode !== room.escapeCode) {
           return {
             ...current,
             mistakes: current.mistakes + 1,
             roomFeedback: {
               ...current.roomFeedback,
-              [room.id]: "De antwoorden lijken goed, maar het codewoord klopt nog niet. Vorm het anagram met de zes letters.",
+              [room.id]: "Je antwoorden kloppen, maar het codewoord is nog niet juist.",
             },
           };
         }
@@ -340,12 +383,14 @@ function App() {
 
   const layoutProps = {
     currentRoomIndex: progress.currentRoomIndex,
+    showOverview: progress.showOverview,
     rooms,
     secondsRemaining: progress.secondsRemaining,
     mistakes: progress.mistakes,
     hintsUsed: progress.hintsUsed,
     completedRooms: progress.completedRooms,
     unlockedRooms: progress.unlockedRooms,
+    draftAnswers: progress.draftAnswers,
     visibleHints: progress.visibleHints,
     onSelectRoom: selectRoom,
     onShowOverview: showOverview,
@@ -354,6 +399,18 @@ function App() {
     muted: progress.muted,
     onToggleMute: toggleMute,
   };
+
+  const initialFiftyFiftyBlockedSeconds = Math.max(
+    0,
+    progress.secondsRemaining - (GAME_SECONDS - FIFTY_FIFTY_INITIAL_WAIT_SECONDS),
+  );
+  const cooldownFiftyFiftyBlockedSeconds = Number.isFinite(progress.fiftyFiftyCooldownUntil)
+    ? Math.max(0, progress.secondsRemaining - progress.fiftyFiftyCooldownUntil)
+    : 0;
+  const fiftyFiftyBlockedSeconds = Math.max(
+    initialFiftyFiftyBlockedSeconds,
+    cooldownFiftyFiftyBlockedSeconds,
+  );
 
   return (
     <GameLayout {...layoutProps}>
@@ -398,6 +455,7 @@ function App() {
         </section>
       ) : (
         <RoomScreen
+          key={currentRoom.id}
           room={currentRoom}
           roomNumber={progress.currentRoomIndex + 1}
           totalRooms={rooms.length}
@@ -407,8 +465,9 @@ function App() {
           roomFeedback={progress.roomFeedback[currentRoom.id]}
           visibleHints={progress.visibleHints}
           roomSolved={progress.completedRooms.includes(currentRoom.id)}
-          canUseFiftyFifty={progress.secondsRemaining <= GAME_SECONDS - 180}
-          fiftyFiftyPuzzleId={progress.fiftyFiftyPuzzleId}
+          fiftyFiftyUsedPuzzleIds={progress.fiftyFiftyUsedPuzzleIds}
+          fiftyFiftyOptionsByPuzzle={progress.fiftyFiftyOptionsByPuzzle}
+          fiftyFiftyBlockedSeconds={fiftyFiftyBlockedSeconds}
           onDraftAnswer={saveDraftAnswer}
           onSubmitRoomCheck={submitRoomCheck}
           onShowHint={showHint}

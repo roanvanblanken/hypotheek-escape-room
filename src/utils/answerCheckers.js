@@ -2,6 +2,65 @@ export function normalizeChoice(value) {
   return String(value || "").trim().toUpperCase();
 }
 
+export function getCorrectAnswerIds(question) {
+  const configured = question.correctAnswerIds || question.answer;
+  return (Array.isArray(configured) ? configured : [configured]).filter(Boolean).map(normalizeChoice);
+}
+
+export function getAnswerLetterMap(question) {
+  return question.answerLetters || {};
+}
+
+export function getSelectedAnswerIds(rawAnswer) {
+  if (rawAnswer && typeof rawAnswer === "object" && !Array.isArray(rawAnswer)) {
+    return Array.isArray(rawAnswer.selectedAnswerIds) ? rawAnswer.selectedAnswerIds.map(normalizeChoice) : [];
+  }
+
+  return (Array.isArray(rawAnswer) ? rawAnswer : [rawAnswer]).filter(Boolean).map(normalizeChoice);
+}
+
+export function getCollectedLetters(question, rawAnswer) {
+  const visibleLetters = question.optionLetters || getAnswerLetterMap(question);
+  return getSelectedAnswerIds(rawAnswer)
+    .map((answerId) => visibleLetters[answerId])
+    .filter(Boolean);
+}
+
+export function isQuestionFilled(question, rawAnswer) {
+  if (rawAnswer && typeof rawAnswer === "object" && !Array.isArray(rawAnswer) && rawAnswer.filled === true) {
+    return true;
+  }
+
+  if (question.type === "multipleChoice" || question.type === "multipleSelect") {
+    return getSelectedAnswerIds(rawAnswer).length > 0;
+  }
+
+  if (question.type === "matching") {
+    return Boolean(rawAnswer && typeof rawAnswer === "object" && Object.keys(rawAnswer).length > 0);
+  }
+
+  return rawAnswer !== undefined && String(rawAnswer || "").trim() !== "";
+}
+
+export function createSelectionDraft(question, selectedAnswerIds) {
+  const normalizedSelected = selectedAnswerIds.filter(Boolean).map(normalizeChoice);
+
+  return {
+    selectedAnswerIds: normalizedSelected,
+    filled: normalizedSelected.length > 0,
+    correctAnswerIds: getCorrectAnswerIds(question),
+    answerLetters: getAnswerLetterMap(question),
+    collectedLetters: getCollectedLetters(question, normalizedSelected),
+  };
+}
+
+function choicesMatchExactly(question, rawAnswer) {
+  const selected = getSelectedAnswerIds(rawAnswer).sort();
+  const expected = getCorrectAnswerIds(question).sort();
+
+  return selected.length === expected.length && selected.every((value, index) => value === expected[index]);
+}
+
 function numericCandidates(rawAnswer) {
   const raw = String(rawAnswer || "")
     .trim()
@@ -56,8 +115,7 @@ export function checkAnswer(question, rawAnswer) {
   }
 
   if (question.type === "multipleChoice") {
-    const selected = normalizeChoice(rawAnswer);
-    const correct = selected === normalizeChoice(question.answer);
+    const correct = choicesMatchExactly(question, rawAnswer);
 
     return {
       correct,
@@ -68,9 +126,7 @@ export function checkAnswer(question, rawAnswer) {
   }
 
   if (question.type === "multipleSelect") {
-    const selected = Array.isArray(rawAnswer) ? rawAnswer.map(normalizeChoice).sort() : [];
-    const expected = Array.isArray(question.answer) ? question.answer.map(normalizeChoice).sort() : [];
-    const correct = selected.length === expected.length && selected.every((value, index) => value === expected[index]);
+    const correct = choicesMatchExactly(question, rawAnswer);
 
     return {
       correct,

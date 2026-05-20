@@ -6,12 +6,14 @@ import Timer from "./Timer";
 function GameLayout({
   children,
   currentRoomIndex,
+  showOverview,
   rooms,
   secondsRemaining,
   mistakes,
   hintsUsed,
   completedRooms,
   unlockedRooms,
+  draftAnswers,
   visibleHints,
   onSelectRoom,
   onShowOverview,
@@ -42,8 +44,10 @@ function GameLayout({
           <RoomNavigator
             rooms={rooms}
             currentRoomIndex={currentRoomIndex}
+            showOverview={showOverview}
             completedRooms={completedRooms}
             unlockedRooms={unlockedRooms}
+            draftAnswers={draftAnswers}
             onSelectRoom={onSelectRoom}
             onShowOverview={onShowOverview}
           />
@@ -57,6 +61,10 @@ function GameLayout({
             secondsRemaining={secondsRemaining}
             mistakes={mistakes}
             hintsUsed={hintsUsed}
+            currentRoom={rooms[currentRoomIndex]}
+            currentRoomIndex={currentRoomIndex}
+            totalRooms={rooms.length}
+            completedRooms={completedRooms}
           />
           <HintDesk
             visibleHints={visibleHints}

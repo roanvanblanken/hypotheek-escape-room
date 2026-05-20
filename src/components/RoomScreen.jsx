@@ -10,8 +10,9 @@ function RoomScreen({
   feedback,
   roomFeedback,
   roomSolved,
-  canUseFiftyFifty,
-  fiftyFiftyPuzzleId,
+  fiftyFiftyUsedPuzzleIds = [],
+  fiftyFiftyOptionsByPuzzle = {},
+  fiftyFiftyBlockedSeconds = 0,
   onDraftAnswer,
   onSubmitRoomCheck,
   onUseFiftyFifty,
@@ -96,8 +97,9 @@ function RoomScreen({
                   draftAnswer={draftAnswers[puzzle.id]}
                   status={answers[puzzle.id]}
                   feedback={feedback[puzzle.id]}
-                  canUseFiftyFifty={canUseFiftyFifty}
-                  fiftyFiftyPuzzleId={fiftyFiftyPuzzleId}
+                  fiftyFiftyHiddenOptions={fiftyFiftyOptionsByPuzzle[puzzle.id] || []}
+                  fiftyFiftyUsedPuzzleIds={fiftyFiftyUsedPuzzleIds}
+                  fiftyFiftyBlockedSeconds={fiftyFiftyBlockedSeconds}
                   onDraftAnswer={onDraftAnswer}
                   onUseFiftyFifty={onUseFiftyFifty}
                 />
@@ -115,9 +117,8 @@ function RoomScreen({
             <p>{isAdviceRoom
               ? "Laat jullie advies controleren door de docent. Bij goedkeuring krijgen jullie de code."
               : hasEscapeCode
-                ? "Sla de zes antwoorden op, vorm met de letters het codewoord en rond daarna het onderzoek af."
+                ? "Sla alle zes vragen op, vorm met de gekozen letters het codewoord en rond daarna het onderzoek af."
                 : "Sla per vraag je antwoord op en rond daarna het onderzoek af."}</p>
-            {roomFeedback && <p className={`feedback ${roomSolved ? "correct" : "incorrect"}`}>{roomFeedback}</p>}
           </div>
           <form className={`room-code-form ${isAdviceRoom || hasEscapeCode ? "with-code" : "single-action"}`} onSubmit={(event) => {
             event.preventDefault();
@@ -129,7 +130,7 @@ function RoomScreen({
                 <input
                   value={roomCode}
                   onChange={(event) => setRoomCode(event.target.value)}
-                  placeholder={isAdviceRoom ? "code" : "anagram"}
+                  placeholder={isAdviceRoom ? "code" : "Vul het codewoord in"}
                   disabled={roomSolved}
                 />
               </label>
@@ -138,6 +139,11 @@ function RoomScreen({
               {isAdviceRoom ? "Win" : "Rond af"}
             </button>
           </form>
+          {roomFeedback && (
+            <p className={`room-alert ${roomSolved ? "correct" : "incorrect"}`} role="status">
+              {roomFeedback}
+            </p>
+          )}
         </section>
       </footer>
     </section>
